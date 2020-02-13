@@ -42,6 +42,7 @@ export default class CropperPage extends React.Component {
 
     ipcRenderer.on('select-app', (_, app) => {
       cropperContainer.selectApp(app);
+      cropperContainer.setActive(true);
     });
 
     ipcRenderer.on('blur', () => {
@@ -155,6 +156,41 @@ export default class CropperPage extends React.Component {
             backface-visibility: hidden;
             perspective: 1000px;
             animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+          }
+
+          :root {
+            --action-bar-box-shadow: 0 20px 40px 0 rgba(0, 0, 0, .2);
+            --action-bar-background: #ffffff;
+            --action-bar-border: none;
+
+            --record-button-border-color: var(--red);
+            --record-button-background: #ff6059 radial-gradient(ellipse 100% 0% at 50% 0%, #ff6159 0%, #ff5f52 50%, #ff3a30 100%);
+            --record-button-focus-background: #ff6059 radial-gradient(ellipse 100% 0% at 50% 0%, #ff6159 0%, #ff5f52 50%, #ff3a30 100%);
+            --record-button-focus-background-cropper: var(--record-button-focus-background);
+            --record-button-focus-outter-background: #ffffff;
+            --record-button-focus-outter-border: var(--record-button-border-color);
+            --record-button-ripple-color: var(--red);
+            --record-button-fill-background: var(--record-button-background);
+            --record-button-inner-background: #fff;
+            --record-button-inner-background-cropper: #fff;
+            --record-button-inner-border-width: 0px;
+
+            --input-hover-border-color: #ccc;
+            --input-border-color: #dbdbdb;
+            --button-active-color: #f7f7f7;
+            --record-button-inner-border: transparent;
+          }
+
+          .dark {
+            --action-bar-box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.4);
+            --action-bar-background: #222222;
+            --action-bar-border: 1px solid rgba(0, 0, 0, 0.8);
+
+            --icon-color: rgba(255, 255, 255, 0.6);
+
+            --input-hover-border-color: transparent;
+            --button-active-color: var(--input-background-color);
+            --record-button-focus-outter-background: #222222;
           }
         `}</style>
       </div>

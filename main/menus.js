@@ -3,9 +3,11 @@
 const os = require('os');
 const {Menu, app, dialog, BrowserWindow} = require('electron');
 const {openNewGitHubIssue, appMenu} = require('electron-util');
-const ipc = require('electron-better-ipc');
+const {ipcMain: ipc} = require('electron-better-ipc');
+const delay = require('delay');
 
 const {supportedVideoExtensions} = require('./common/constants');
+const {ensureDockIsShowing} = require('./utils/dock');
 const {openPrefsWindow} = require('./preferences');
 const {openExportsWindow} = require('./exports');
 const {openAboutWindow} = require('./about');
@@ -42,14 +44,18 @@ Workaround:           A workaround for the issue if you've found on. (this will 
 const openFileItem = {
   label: 'Open Video…',
   accelerator: 'Command+O',
-  click: () => {
+  click: async () => {
     closeAllCroppers();
 
-    dialog.showOpenDialog({
-      filters: [{name: 'Videos', extensions: supportedVideoExtensions}],
-      properties: ['openFile']
-    }, filePaths => {
-      if (filePaths) {
+    await delay(200);
+
+    await ensureDockIsShowing(async () => {
+      const {canceled, filePaths} = await dialog.showOpenDialog({
+        filters: [{name: 'Videos', extensions: supportedVideoExtensions}],
+        properties: ['openFile', 'multiSelections']
+      });
+
+      if (!canceled && filePaths) {
         openFiles(...filePaths);
       }
     });
@@ -68,7 +74,7 @@ const sendFeedbackItem = {
 };
 
 const aboutItem = {
-  label: `About ${app.getName()}`,
+  label: `About ${app.name}`,
   click: openAboutWindow
 };
 
@@ -82,7 +88,7 @@ const exportHistoryItem = {
 const preferencesItem = {
   label: 'Preferences…',
   accelerator: 'Command+,',
-  click: openPrefsWindow
+  click: () => openPrefsWindow()
 };
 
 const cogMenuTemplate = [
@@ -116,7 +122,7 @@ appMenuItem.submenu[0] = aboutItem;
 const applicationMenuTemplate = [
   appMenuItem,
   {
-    label: 'File',
+    role: 'fileMenu',
     submenu: [
       openFileItem,
       {
@@ -142,7 +148,7 @@ const applicationMenuTemplate = [
     role: 'editMenu'
   },
   {
-    role: 'window',
+    role: 'windowMenu',
     submenu: [
       {
         role: 'minimize'

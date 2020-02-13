@@ -58,6 +58,7 @@ class Video extends React.Component {
           video {
             width: 100%;
             height: 100%;
+            max-height: calc(100vh - 48px);
           }
 
           .container {
@@ -71,8 +72,8 @@ class Video extends React.Component {
 
 Video.propTypes = {
   src: PropTypes.string,
-  setVideo: PropTypes.func,
-  getSnapshot: PropTypes.func
+  setVideo: PropTypes.elementType,
+  getSnapshot: PropTypes.elementType
 };
 
 export default connect(

@@ -1,4 +1,6 @@
 import {Container} from 'unstated';
+import {ipcRenderer as ipc} from 'electron-better-ipc';
+import * as stringMath from 'string-math';
 import {shake} from '../utils/inputs';
 
 const isMuted = format => ['gif', 'apng'].includes(format);
@@ -12,11 +14,13 @@ export default class EditorContainer extends Container {
     this.videoContainer = videoContainer;
   }
 
-  mount = (filePath, fps = 15, originalFilePath, resolve) => {
+  // TODO: Fix the below lint violation.
+  // eslint-disable-next-line default-param-last
+  mount = (filePath, fps = 15, originalFilePath, isNewRecording, resolve) => {
     const src = `file://${filePath}`;
     this.finishLoading = resolve;
 
-    this.setState({src, filePath, originalFilePath, fps, originalFps: fps, wasMuted: false});
+    this.setState({src, filePath, originalFilePath, fps, originalFps: fps, wasMuted: false, isNewRecording});
     this.videoContainer.setSrc(src);
   }
 
@@ -36,12 +40,26 @@ export default class EditorContainer extends Container {
       return;
     }
 
-    if (value.match(/^\d+$/)) {
-      const val = parseInt(value, 10);
+    if (!value.match(/^\d+$/) && ignoreEmpty) {
+      const {width, height, lastValid = {}} = this.state;
+      this.setState({[name]: value, lastValid: {width, height, ...lastValid}});
+      return;
+    }
+
+    let parsedValue;
+    try {
+      parsedValue = stringMath(value);
+    } catch {}
+
+    if (parsedValue) {
+      const val = Math.round(parsedValue);
 
       if (name === 'width') {
         const min = Math.max(1, Math.ceil(ratio));
-        if (val < min) {
+
+        if (ignoreEmpty) {
+          updates.width = val;
+        } else if (val < min) {
           shake(currentTarget, {className: 'shake-left'});
           updates.width = min;
         } else if (val > original.width) {
@@ -51,10 +69,13 @@ export default class EditorContainer extends Container {
           updates.width = val;
         }
 
-        updates.height = Math.round(updates.width / ratio);
+        updates.height = Math.floor(updates.width / ratio);
       } else {
         const min = Math.max(1, Math.ceil(1 / ratio));
-        if (val < min) {
+
+        if (ignoreEmpty) {
+          updates.height = val;
+        } else if (val < min) {
           shake(currentTarget, {className: 'shake-right'});
           updates.height = min;
         } else if (val > original.height) {
@@ -64,7 +85,7 @@ export default class EditorContainer extends Container {
           updates.height = val;
         }
 
-        updates.width = Math.round(updates.height * ratio);
+        updates.width = Math.ceil(updates.height * ratio);
       }
     } else if (name === 'width') {
       shake(currentTarget, {className: 'shake-left'});
@@ -98,26 +119,37 @@ export default class EditorContainer extends Container {
 
   saveOriginal = () => {
     const {filePath, originalFilePath} = this.state;
-    const ipc = require('electron-better-ipc');
     ipc.callMain('save-original', {inputPath: originalFilePath || filePath});
   }
 
   selectFormat = format => {
     const {plugin, options, wasMuted} = this.state;
     const {plugins} = options.find(option => option.format === format);
-    const newPlugin = plugins.find(p => p.title === plugin) ? plugin : plugins[0].title;
+    const newPlugin = plugin !== 'Open With' && plugins.find(p => p.title === plugin) ? plugin : plugins[0].title;
 
-    if (isMuted(format) && !isMuted(this.state.format)) {
-      this.setState({wasMuted: this.videoContainer.state.isMuted});
-      this.videoContainer.mute();
-    } else if (!isMuted(format) && isMuted(this.state.format) && !wasMuted) {
-      this.videoContainer.unmute();
+    if (this.videoContainer.state.hasAudio) {
+      if (isMuted(format) && !isMuted(this.state.format)) {
+        this.setState({wasMuted: this.videoContainer.state.isMuted});
+        this.videoContainer.mute();
+      } else if (!isMuted(format) && isMuted(this.state.format) && !wasMuted) {
+        this.videoContainer.unmute();
+      }
     }
 
-    this.setState({format, plugin: newPlugin});
+    this.setState({format, plugin: newPlugin, openWithApp: null});
   }
 
-  selectPlugin = plugin => this.setState({plugin})
+  selectPlugin = plugin => {
+    if (plugin === 'open-plugins') {
+      ipc.callMain('open-preferences', {category: 'plugins', tab: 'discover'});
+    } else {
+      this.setState({plugin, openWithApp: null});
+    }
+  }
+
+  selectOpenWithApp = openWithApp => {
+    this.setState({plugin: 'Open With', openWithApp});
+  }
 
   setFps = (value, target, {ignoreEmpty = true} = {}) => {
     const {fps, lastValidFps} = this.state;
@@ -157,8 +189,6 @@ export default class EditorContainer extends Container {
     const time = this.videoContainer.state.currentTime;
     const {filePath} = this.state;
 
-    const ipc = require('electron-better-ipc');
-
     ipc.callMain('export-snapshot', {
       inputPath: filePath,
       time
@@ -166,11 +196,10 @@ export default class EditorContainer extends Container {
   }
 
   startExport = () => {
-    const {width, height, fps, filePath, originalFilePath, options, format, plugin: serviceTitle, originalFps} = this.state;
+    const {width, height, fps, openWithApp, filePath, originalFilePath, options, format, plugin: serviceTitle, originalFps, isNewRecording} = this.state;
     const {startTime, endTime, isMuted} = this.videoContainer.state;
 
     const plugin = options.find(option => option.format === format).plugins.find(p => p.title === serviceTitle);
-    const {pluginName, isDefault} = plugin;
 
     const data = {
       exportOptions: {
@@ -183,16 +212,15 @@ export default class EditorContainer extends Container {
       },
       inputPath: originalFilePath || filePath,
       previewPath: filePath,
-      pluginName,
-      isDefault,
+      plugin,
       serviceTitle,
       format,
-      originalFps
+      originalFps,
+      isNewRecording,
+      openWithApp
     };
 
-    const ipc = require('electron-better-ipc');
-
     ipc.callMain('export', data);
-    ipc.callMain('update-usage', {format, plugin: pluginName});
+    ipc.callMain('update-usage', {format, plugin: plugin.pluginName});
   }
 }

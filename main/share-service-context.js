@@ -1,9 +1,6 @@
 'use strict';
-
-const electron = require('electron');
+const {Notification, clipboard} = require('electron');
 const got = require('got');
-
-const {Notification} = electron;
 
 const prettifyFormat = format => {
   const formats = new Map([
@@ -18,6 +15,8 @@ const prettifyFormat = format => {
 
 class ShareServiceContext {
   constructor(options) {
+    this._isBuiltin = options._isBuiltin;
+
     this.format = options.format;
     this.prettyFormat = prettifyFormat(this.format);
     this.defaultFileName = options.defaultFileName;
@@ -27,7 +26,7 @@ class ShareServiceContext {
     this.onProgress = options.onProgress;
     this.pluginName = options.pluginName;
 
-    this.canceled = false;
+    this.isCanceled = false;
     this.requests = [];
 
     this.request = this.request.bind(this);
@@ -39,7 +38,7 @@ class ShareServiceContext {
   }
 
   request(url, options) {
-    if (this.canceled) {
+    if (this.isCanceled) {
       return;
     }
 
@@ -51,7 +50,7 @@ class ShareServiceContext {
   }
 
   cancel() {
-    this.canceled = true;
+    this.isCanceled = true;
     this.onCancel();
 
     for (const request of this.requests) {
@@ -60,35 +59,43 @@ class ShareServiceContext {
   }
 
   clear() {
-    this.canceled = true;
-    for (const req of this.requests) {
-      req.cancel();
+    this.isCanceled = true;
+
+    for (const request of this.requests) {
+      request.cancel();
     }
   }
 
   copyToClipboard(text) {
-    if (this.canceled) {
+    if (this.isCanceled) {
       return;
     }
 
-    electron.clipboard.writeText(text);
+    clipboard.writeText(text);
   }
 
   notify(text) {
-    if (this.canceled) {
+    if (this.isCanceled) {
       return;
     }
 
-    const notification = new Notification({
+    let options = {
       title: this.pluginName,
       body: text
-    });
+    };
 
+    if (this._isBuiltin) {
+      options = {
+        body: text
+      };
+    }
+
+    const notification = new Notification(options);
     notification.show();
   }
 
   setProgress(text, percentage) {
-    if (this.canceled) {
+    if (this.isCanceled) {
       return;
     }
 
@@ -96,7 +103,7 @@ class ShareServiceContext {
   }
 
   openConfigFile() {
-    if (this.canceled) {
+    if (this.isCanceled) {
       return;
     }
 

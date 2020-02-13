@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import Linkify from 'react-linkify';
 
-import Item from '../preferences/item';
+import Item, {Link} from '../preferences/item';
 import Select from '../preferences/item/select';
 import Switch from '../preferences/item/switch';
 import {OpenOnGithubIcon, OpenConfigIcon} from '../../vectors';
@@ -16,15 +17,18 @@ const ConfigInput = ({name, type, schema, value, onChange, hasErrors}) => {
           input {
             outline: none;
             width: 100%;
-            border: 1px solid #ddd;
+            border: 1px solid var(--input-border-color);
+            background: var(--input-background-color);
+            color: var(--title-color);
             border-radius: 3px;
             box-sizing: border-box;
             height: 32px;
             padding: 4px 8px;
             line-height: 32px;
             font-size: 12px;
-            margin-top: 16px;
+            margin-top: 8px;
             outline: none;
+            box-shadow: var(--input-shadow);
           }
 
           .has-errors {
@@ -33,7 +37,7 @@ const ConfigInput = ({name, type, schema, value, onChange, hasErrors}) => {
           }
 
           input:focus {
-            border-color: #007aff;
+            border-color: var(--kap);
           }
 
           div {
@@ -60,7 +64,7 @@ ConfigInput.propTypes = {
     PropTypes.string,
     PropTypes.bool
   ]),
-  onChange: PropTypes.func.isRequired,
+  onChange: PropTypes.elementType.isRequired,
   hasErrors: PropTypes.bool
 };
 
@@ -68,11 +72,18 @@ class Tab extends React.Component {
   render() {
     const {validator, values, onChange, openConfig, viewOnGithub} = this.props;
 
-    const {config, errors} = validator;
+    const {config, errors, description} = validator;
     const allErrors = errors || [];
 
     return (
       <div className="container">
+        {
+          description && (
+            <div className="description">
+              <Linkify component={Link}>{description}</Linkify>
+            </div>
+          )
+        }
         {
           [...Object.keys(config)].map(key => {
             const schema = config[key];
@@ -84,6 +95,7 @@ class Tab extends React.Component {
             return (
               <Item
                 key={key}
+                small
                 title={schema.title}
                 subtitle={schema.description}
                 vertical={type === 'string'}
@@ -102,16 +114,25 @@ class Tab extends React.Component {
           })
         }
         <Item subtitle="Open config file" onClick={openConfig}>
-          <div className="icon-container"><OpenConfigIcon fill="#007aff" hoverFill="#007aff" onClick={openConfig}/></div>
+          <div className="icon-container"><OpenConfigIcon fill="var(--kap)" hoverFill="var(--kap)" onClick={openConfig}/></div>
         </Item>
         <Item last subtitle="View plugin on GitHub" onClick={viewOnGithub}>
-          <div className="icon-container"><OpenOnGithubIcon size="20px" fill="#007aff" hoverFill="#007aff" onClick={viewOnGithub}/></div>
+          <div className="icon-container"><OpenOnGithubIcon size="20px" fill="var(--kap)" hoverFill="var(--kap)" onClick={viewOnGithub}/></div>
         </Item>
         <style jsx>{`
           .container {
             width: 100%;
             height: 100%;
             overflow-y: auto;
+          }
+
+          .description {
+            color: var(--subtitle-color);
+            font-weight: normal;
+            font-size: 1.4rem;
+            width: 100%;
+            padding: 16px 16px 0 16px;
+            box-sizing: border-box;
           }
 
           .icon-container {
@@ -128,11 +149,11 @@ class Tab extends React.Component {
 }
 
 Tab.propTypes = {
-  validator: PropTypes.func,
+  validator: PropTypes.elementType,
   values: PropTypes.object,
-  onChange: PropTypes.func.isRequired,
-  openConfig: PropTypes.func.isRequired,
-  viewOnGithub: PropTypes.func.isRequired
+  onChange: PropTypes.elementType.isRequired,
+  openConfig: PropTypes.elementType.isRequired,
+  viewOnGithub: PropTypes.elementType.isRequired
 };
 
 export default Tab;

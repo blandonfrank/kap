@@ -1,5 +1,6 @@
 import React from 'react';
 import {Provider} from 'unstated';
+import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 import {ConfigContainer} from '../containers';
 import Config from '../components/config';
@@ -11,8 +12,6 @@ export default class ConfigPage extends React.Component {
   state = {pluginName: ''}
 
   componentDidMount() {
-    const ipc = require('electron-better-ipc');
-
     ipc.answerMain('plugin', pluginName => {
       configContainer.setPlugin(pluginName);
       this.setState({pluginName: pluginName.replace(/^kap-/, '')});
@@ -44,8 +43,18 @@ export default class ConfigPage extends React.Component {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
           }
 
+          :root {
+            --background-color: #ffffff;
+            --button-color: var(--kap);
+          }
+
+          .dark .cover-window {
+            --background-color: #313234;
+            --button-color: #2182f0;
+          }
+
           .cover-window {
-            background-color: white;
+            background-color: var(--background-color);
             z-index: -2;
             display: flex;
             flex-direction: column;

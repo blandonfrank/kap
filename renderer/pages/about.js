@@ -1,5 +1,6 @@
 import electron from 'electron';
 import React from 'react';
+import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 export default class AboutPage extends React.Component {
   state = {}
@@ -11,14 +12,13 @@ export default class AboutPage extends React.Component {
     const icon = await getAppIcon();
 
     this.setState({
-      name: app.getName(),
+      name: app.name,
       version: app.getVersion(),
       icon
     });
   }
 
   componentDidUpdate() {
-    const ipc = require('electron-better-ipc');
     ipc.callMain('about-ready');
   }
 
@@ -67,6 +67,11 @@ export default class AboutPage extends React.Component {
             background-color: #ececec;
           }
 
+          .dark .container {
+            background-color: #313234;
+            color: #fff;
+          }
+
           .icon {
             width: 64px;
             height: 64px;
@@ -87,9 +92,13 @@ export default class AboutPage extends React.Component {
 
           footer {
             margin-top: 8px;
-            color: #007aff;
+            color: var(--kap);
             font-weight: 500;
             display: flex;
+          }
+
+          .dark footer {
+            color: #2182f0;
           }
 
           .link {

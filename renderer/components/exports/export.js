@@ -1,6 +1,7 @@
 import electron from 'electron';
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 
 import IconMenu from '../icon-menu';
 import {CancelIcon, MoreIcon} from '../../vectors';
@@ -27,7 +28,7 @@ export default class Export extends React.Component {
 
   openFile = () => {
     const {filePath} = this.props;
-    if (filePath) {
+    if (this.isActionable) {
       electron.remote.shell.showItemInFolder(filePath);
     }
   }
@@ -35,7 +36,14 @@ export default class Export extends React.Component {
   onDragStart = event => {
     const {createdAt} = this.props;
     event.preventDefault();
-    electron.ipcRenderer.send('drag-export', createdAt);
+    if (this.isActionable) {
+      electron.ipcRenderer.send('drag-export', createdAt);
+    }
+  }
+
+  get isActionable() {
+    const {filePath, disableOutputActions} = this.props;
+    return filePath && !disableOutputActions;
   }
 
   render() {
@@ -50,7 +58,10 @@ export default class Export extends React.Component {
     const {menu} = this.state;
 
     const cancelable = status === 'waiting' || status === 'processing';
-
+    const fileNameClassName = classNames({
+      title: true,
+      disabled: !this.isActionable
+    });
     return (
       <div draggable className="export-container" onClick={this.openFile} onDragStart={this.onDragStart}>
         <div className="thumbnail">
@@ -58,8 +69,17 @@ export default class Export extends React.Component {
           <div className="icon" onClick={stopPropagation}>
             {
               cancelable ?
-                <CancelIcon fill="white" hoverFill="white" activeFill="white" onClick={cancel}/> :
-                <IconMenu icon={MoreIcon} fill="white" hoverFill="white" activeFill="white" onOpen={menu && menu.popup}/>
+                <div className="icon" onClick={cancel}>
+                  <CancelIcon fill="white" hoverFill="white" activeFill="white"/>
+                </div> :
+                <IconMenu
+                  fillParent
+                  icon={MoreIcon}
+                  fill="white"
+                  hoverFill="white"
+                  activeFill="white"
+                  onOpen={menu && menu.popup}
+                />
             }
           </div>
           <div className="progress">
@@ -73,13 +93,15 @@ export default class Export extends React.Component {
           </div>
         </div>
         <div className="details">
-          <div className="title">{defaultFileName}</div>
+          <div className={fileNameClassName}>
+            {defaultFileName}
+          </div>
           <div className="subtitle">{text}</div>
         </div>
         <style jsx>{`
           .export-container {
             height: 80px;
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid var(--row-divider-color);
             padding: 16px;
             display: flex;
             align-items: center;
@@ -101,7 +123,7 @@ export default class Export extends React.Component {
             position: absolute;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--thumbnail-overlay-color);
           }
 
           .icon, .progress {
@@ -125,16 +147,21 @@ export default class Export extends React.Component {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: var(--title-color);
+          }
+
+          .disabled {
+            color: var(--switch-disabled-color);
           }
 
           .subtitle {
             font-size: 12px;
-            color: #808080;
+            color: var(--subtitle-color);
             user-select: none;
           }
 
           .export-container:hover {
-            background: #f9f9f9;
+            background: var(--row-hover-color);
           }
 
           .export-container:hover .progress {
@@ -152,12 +179,13 @@ export default class Export extends React.Component {
 
 Export.propTypes = {
   defaultFileName: PropTypes.string,
+  disableOutputActions: PropTypes.bool,
   status: PropTypes.string,
   text: PropTypes.string,
   percentage: PropTypes.number,
   image: PropTypes.string,
-  cancel: PropTypes.func,
-  openInEditor: PropTypes.func,
+  cancel: PropTypes.elementType,
+  openInEditor: PropTypes.elementType,
   filePath: PropTypes.string,
   createdAt: PropTypes.string
 };

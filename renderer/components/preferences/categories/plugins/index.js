@@ -89,7 +89,7 @@ class Plugins extends React.Component {
                   <EmptyTab
                     showIcon
                     title="No plugins yet"
-                    subtitle="Customize Kap your liking with plugins."
+                    subtitle="Customize Kap to your liking with plugins."
                     link="Discover"
                     onClick={() => selectTab('discover')}/>
                 ) : (
@@ -120,7 +120,7 @@ class Plugins extends React.Component {
             padding: 0 16px;
             display: flex;
             align-items: center;
-            box-shadow: 0 1px 0 0 #ddd, inset 0 1px 0 0 #fff;
+            box-shadow: 0 1px 0 0 var(--row-divider-color), inset 0 1px 0 0 #fff;
             z-index: 10;
           }
 
@@ -132,7 +132,7 @@ class Plugins extends React.Component {
             justify-content: center;
             padding-bottom: 2px;
             font-size: 1.2rem;
-            color: #007aff;
+            color: var(--kap);
             font-weight: 500;
             width: 64px;
             outline: none;
@@ -144,12 +144,12 @@ class Plugins extends React.Component {
           }
 
           .plugins-nav .selected {
-            border-bottom: 2px solid #007aff;
+            border-bottom: 2px solid var(--kap);
             padding-bottom: 0;
           }
 
           .plugins-nav .selected:focus {
-            border-bottom: 2px solid #007aff;
+            border-bottom: 2px solid var(--kap);
             padding-bottom: 0;
           }
 
@@ -181,11 +181,11 @@ Plugins.propTypes = {
   pluginsFromNpm: PropTypes.array,
   pluginBeingInstalled: PropTypes.string,
   pluginBeingUninstalled: PropTypes.string,
-  install: PropTypes.func.isRequired,
-  uninstall: PropTypes.func.isRequired,
-  onTransitionEnd: PropTypes.func,
+  install: PropTypes.elementType.isRequired,
+  uninstall: PropTypes.elementType.isRequired,
+  onTransitionEnd: PropTypes.elementType,
   tab: PropTypes.string,
-  selectTab: PropTypes.func.isRequired,
+  selectTab: PropTypes.elementType.isRequired,
   npmError: PropTypes.bool,
   fetchFromNpm: PropTypes.func.isRequired,
   openPluginsConfig: PropTypes.func.isRequired,

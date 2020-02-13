@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import {Provider} from 'unstated';
+import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 import Editor from '../components/editor';
 import Options from '../components/editor/options';
@@ -16,11 +17,9 @@ export default class EditorPage extends React.Component {
   wasPaused = false;
 
   componentDidMount() {
-    const ipc = require('electron-better-ipc');
-
-    ipc.answerMain('file', async ({filePath, fps, originalFilePath}) => {
+    ipc.answerMain('file', async ({filePath, fps, originalFilePath, isNewRecording}) => {
       await new Promise((resolve, reject) => {
-        editorContainer.mount(filePath, parseInt(fps, 10), originalFilePath, resolve, reject);
+        editorContainer.mount(filePath, parseInt(fps, 10), originalFilePath, isNewRecording, resolve, reject);
       });
       return true;
     });
@@ -74,6 +73,19 @@ export default class EditorPage extends React.Component {
             text-shadow: 0 1px 2px rgba(0,0,0,.1);
           }
 
+          :root {
+            --slider-popup-background: rgba(255, 255, 255, 0.85);
+            --slider-background-color: #ffffff;
+            --slider-thumb-color: #ffffff;
+            --background-color: #222222;
+          }
+
+          .dark {
+            --slider-popup-background: #222222;
+            --slider-background-color: var(--input-background-color);
+            --slider-thumb-color: var(--storm);
+          }
+
           .cover-window {
             display: flex;
             flex-direction: column;
@@ -89,7 +101,7 @@ export default class EditorPage extends React.Component {
             height: 48px;
             z-index: 50;
             display: flex;
-            background: rgba(32,33,37,0.98);
+            background: rgba(0, 0, 0, 0.3);
           }
 
           @keyframes shake-left {

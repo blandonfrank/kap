@@ -73,8 +73,7 @@ class Left extends React.Component {
 }
 
 Left.propTypes = {
-  toggleAdvanced: PropTypes.func.isRequired,
-  selectApp: PropTypes.func.isRequired,
+  toggleAdvanced: PropTypes.elementType.isRequired,
   selectedApp: PropTypes.string,
   advanced: PropTypes.bool
 };
@@ -82,7 +81,7 @@ Left.propTypes = {
 MainControls.Left = connect(
   [CropperContainer, ActionBarContainer],
   ({selectedApp}, {advanced}) => ({selectedApp, advanced}),
-  ({selectApp}, {toggleAdvanced}) => ({selectApp, toggleAdvanced})
+  (_, {toggleAdvanced}) => ({toggleAdvanced})
 )(Left);
 
 class Right extends React.Component {
@@ -113,8 +112,8 @@ class Right extends React.Component {
 }
 
 Right.propTypes = {
-  enterFullscreen: PropTypes.func.isRequired,
-  exitFullscreen: PropTypes.func.isRequired,
+  enterFullscreen: PropTypes.elementType.isRequired,
+  exitFullscreen: PropTypes.elementType.isRequired,
   isFullscreen: PropTypes.bool,
   advanced: PropTypes.bool
 };

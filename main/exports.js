@@ -19,7 +19,13 @@ const openExportsWindow = async () => {
       maximizable: false,
       fullscreenable: false,
       titleBarStyle: 'hiddenInset',
-      show: false
+      show: false,
+      frame: false,
+      transparent: true,
+      vibrancy: 'window',
+      webPreferences: {
+        nodeIntegration: true
+      }
     });
 
     const titlebarHeight = 37;

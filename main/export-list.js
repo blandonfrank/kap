@@ -1,9 +1,9 @@
 /* eslint-disable array-element-newline */
 'use strict';
-const {dialog, ipcMain, BrowserWindow} = require('electron');
+const {dialog, BrowserWindow, app} = require('electron');
 const fs = require('fs');
-const pify = require('pify');
-const ipc = require('electron-better-ipc');
+const {dirname} = require('path');
+const {ipcMain: ipc} = require('electron-better-ipc');
 const base64Img = require('base64-img');
 const tmp = require('tmp');
 const ffmpeg = require('@ffmpeg-installer/ffmpeg');
@@ -19,9 +19,10 @@ const {getExportsWindow, openExportsWindow} = require('./exports');
 const {openEditorWindow} = require('./editor');
 const {toggleExportMenuItem} = require('./menus');
 const Export = require('./export');
+const {ensureDockIsShowingSync} = require('./utils/dock');
 
 const ffmpegPath = util.fixPathForAsarUnpack(ffmpeg.path);
-const showSaveDialog = pify(dialog.showSaveDialog, {errorFirst: false});
+let lastSavedDirectory;
 
 const filterMap = new Map([
   ['mp4', [{name: 'Movies', extensions: ['mp4']}]],
@@ -59,7 +60,7 @@ const getDragIcon = async inputPath => {
 const saveSnapshot = async ({inputPath, time}) => {
   const now = moment();
 
-  const outputPath = await showSaveDialog(BrowserWindow.getFocusedWindow(), {
+  const {filePath: outputPath} = await dialog.showSaveDialog(BrowserWindow.getFocusedWindow(), {
     defaultPath: `Snapshot ${now.format('YYYY-MM-DD')} at ${now.format('H.mm.ss')}.jpg`
   });
 
@@ -86,6 +87,7 @@ class ExportList {
 
     this.currentExport = this.queue.shift();
     if (this.currentExport.canceled) {
+      delete this.currentExport;
       this._startNext();
       return;
     }
@@ -126,7 +128,7 @@ class ExportList {
     const newExport = new Export(options);
     const createdAt = (new Date()).toISOString();
 
-    if (options.isDefault) {
+    if (options.plugin.pluginName === '_saveToDisk') {
       const wasExportsWindowOpen = Boolean(getExportsWindow());
       const exportsWindow = await openExportsWindow();
       const kapturesDir = settings.get('kapturesDir');
@@ -134,14 +136,15 @@ class ExportList {
 
       const filters = filterMap.get(options.format);
 
-      const filePath = await showSaveDialog(exportsWindow, {
+      const {filePath} = await dialog.showSaveDialog(exportsWindow, {
         title: newExport.defaultFileName,
-        defaultPath: `${kapturesDir}/${newExport.defaultFileName}`,
+        defaultPath: `${lastSavedDirectory || kapturesDir}/${newExport.defaultFileName}`,
         filters
       });
 
       if (filePath) {
         newExport.context.targetFilePath = filePath;
+        lastSavedDirectory = dirname(filePath);
       } else {
         if (!wasExportsWindowOpen) {
           exportsWindow.close();
@@ -149,10 +152,12 @@ class ExportList {
 
         return;
       }
+    } else if (options.plugin.pluginName === '_openWith') {
+      newExport.context.appUrl = options.openWithApp.url;
     }
 
-    if (!newExport.plugin.isConfigValid()) {
-      const result = dialog.showMessageBox({
+    if (!newExport.config.isConfigValid()) {
+      const result = dialog.showMessageBoxSync({
         type: 'error',
         buttons: ['Configure', 'Cancel'],
         defaultId: 0,
@@ -235,7 +240,7 @@ ipc.answerRenderer('open-export', createdAt => exportList.openExport(createdAt))
 
 ipc.answerRenderer('export-snapshot', saveSnapshot);
 
-ipcMain.on('drag-export', async (event, createdAt) => {
+ipc.on('drag-export', async (event, createdAt) => {
   const exportItem = exportList.getExport(createdAt);
   const file = exportItem && exportItem.data.filePath;
 
@@ -251,10 +256,35 @@ const callExportsWindow = (channel, data) => {
   const exportsWindow = getExportsWindow();
 
   if (exportsWindow) {
-    ipc.callRenderer(exportsWindow, channel, data);
+    // TODO(karaggeorge): Investigate why `ipc.callRenderer(exportsWindow, channel, data);` is not working here.
+    exportsWindow.webContents.send(channel, data);
   }
 };
 
 module.exports = () => {
   exportList = new ExportList();
+
+  app.on('before-quit', event => {
+    if (exportList.currentExport) {
+      openExportsWindow();
+
+      ensureDockIsShowingSync(() => {
+        const buttonIndex = dialog.showMessageBoxSync({
+          type: 'question',
+          buttons: [
+            'Continue',
+            'Quit'
+          ],
+          defaultId: 0,
+          cancelId: 1,
+          message: 'Do you want to continue exporting?',
+          detail: 'Kap is currently exporting files. If you quit, the export task will be canceled.'
+        });
+
+        if (buttonIndex === 0) {
+          event.preventDefault();
+        }
+      });
+    }
+  });
 };

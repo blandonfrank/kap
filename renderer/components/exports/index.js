@@ -29,6 +29,7 @@ class Exports extends React.Component {
         <style jsx>{`
             flex: 1;
             overflow-y: auto;
+            background: var(--background-color);
         `}</style>
       </div>
     );
@@ -37,8 +38,8 @@ class Exports extends React.Component {
 
 Exports.propTypes = {
   exports: PropTypes.arrayOf(PropTypes.object),
-  cancel: PropTypes.func,
-  openInEditor: PropTypes.func,
+  cancel: PropTypes.elementType,
+  openInEditor: PropTypes.elementType,
   isMounted: PropTypes.bool
 };
 

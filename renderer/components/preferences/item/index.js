@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import Linkify from 'react-linkify';
 
-const Link = ({href, children}) => (
+export const Link = ({href, children}) => (
   <span onClick={() => electron.shell.openExternal(href)}>
     {children}
     <style jsx>{`
-      color: #007aff;
+      color: var(--kap);
       text-decoration: none;
       cursor: pointer;
 
@@ -47,7 +47,8 @@ class Item extends React.Component {
       warning,
       onClick,
       last,
-      parentItem
+      parentItem,
+      small
     } = this.props;
 
     const subtitleArray = Array.isArray(subtitle) ? subtitle : [subtitle];
@@ -70,16 +71,16 @@ class Item extends React.Component {
             {children}
           </div>
         </div>
-        {
-          errors && errors.length > 0 && <div className="errors">{ errors.map(e => <div key={e}>{e}</div>) }</div>
-        }
+        {errors && errors.length > 0 && (
+          <div className="errors">{errors.map(e => <div key={e}>{e}</div>)}</div>
+        )}
         <style jsx>{`
           .container {
             display: flex;
             max-width: 100%;
-            padding: ${onClick ? '16px' : '32px'} 16px;
+            padding: ${small || onClick ? '16px' : '32px'} 16px;
             margin-bottom: ${last ? '16px' : '0'};
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid var(--row-divider-color);
             flex-direction: column;
           }
 
@@ -99,6 +100,7 @@ class Item extends React.Component {
             font-size: 1.2rem;
             line-height: 1.6rem;
             font-weight: 500;
+            color: var(--title-color);
           }
 
           .content {
@@ -109,15 +111,18 @@ class Item extends React.Component {
           }
 
           .subtitle {
-            color: ${onClick ? '#007aff' : '#606060'};
+            color: var(--${onClick ? 'link-color' : 'subtitle-color'});
             font-weight: ${onClick ? '500' : 'normal'};
             font-size: 1.2rem;
-            width: max-content;
+            width: 100%;
+            padding-right: 16px;
+            box-sizing: border-box;
           }
 
           .input {
             display: flex;
             align-items: center;
+            margin-left: ${vertical ? '0px' : '8px'};
           }
 
           .experimental {
@@ -133,7 +138,7 @@ class Item extends React.Component {
           }
 
           .link {
-            color: #007aff;
+            color: var(--kap);
             cursor: pointer;
           }
 
@@ -176,14 +181,15 @@ Item.propTypes = {
   ]),
   vertical: PropTypes.bool,
   errors: PropTypes.arrayOf(PropTypes.string),
-  onSubtitleClick: PropTypes.func,
+  onSubtitleClick: PropTypes.elementType,
   warning: PropTypes.oneOfType([
     PropTypes.arrayOf(PropTypes.node),
     PropTypes.node
   ]),
-  onClick: PropTypes.func,
+  onClick: PropTypes.elementType,
   last: PropTypes.bool,
-  parentItem: PropTypes.bool
+  parentItem: PropTypes.bool,
+  small: PropTypes.bool
 };
 
 export default Item;

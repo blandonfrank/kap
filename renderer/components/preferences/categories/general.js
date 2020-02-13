@@ -45,6 +45,7 @@ class General extends React.Component {
       recordKeyboardShortcut,
       loopExports,
       toggleSetting,
+      toggleRecordAudio,
       audioInputDeviceId,
       setAudioInputDeviceId,
       audioDevices,
@@ -151,17 +152,20 @@ class General extends React.Component {
           <Switch
             tabIndex={tabIndex}
             checked={recordAudio}
-            onClick={() => toggleSetting('recordAudio')}/>
+            onClick={toggleRecordAudio}/>
         </Item>
-        <Item key="audioInputDeviceId" subtitle="Select input device">
-          <Select
-            tabIndex={tabIndex}
-            options={devices}
-            selected={audioInputDeviceId}
-            placeholder="Select Device"
-            noOptionsMessage="No input devices"
-            onSelect={setAudioInputDeviceId}/>
-        </Item>
+        {
+          recordAudio &&
+            <Item key="audioInputDeviceId" subtitle="Select input device">
+              <Select
+                tabIndex={tabIndex}
+                options={devices}
+                selected={audioInputDeviceId}
+                placeholder="Select Device"
+                noOptionsMessage="No input devices"
+                onSelect={setAudioInputDeviceId}/>
+            </Item>
+        }
         <Item
           key="record60fps"
           title="Capture frame rate"
@@ -208,19 +212,20 @@ General.propTypes = {
   doNotDisturb: PropTypes.bool,
   record60fps: PropTypes.bool,
   recordKeyboardShortcut: PropTypes.bool,
-  toggleSetting: PropTypes.func.isRequired,
+  toggleSetting: PropTypes.elementType.isRequired,
+  toggleRecordAudio: PropTypes.elementType.isRequired,
   audioInputDeviceId: PropTypes.string,
-  setAudioInputDeviceId: PropTypes.func.isRequired,
+  setAudioInputDeviceId: PropTypes.elementType.isRequired,
   audioDevices: PropTypes.array,
   recordAudio: PropTypes.bool,
   kapturesDir: PropTypes.string,
   openOnStartup: PropTypes.bool,
   allowAnalytics: PropTypes.bool,
   loopExports: PropTypes.bool,
-  pickKapturesDir: PropTypes.func.isRequired,
-  setOpenOnStartup: PropTypes.func.isRequired,
-  updateShortcut: PropTypes.func.isRequired,
-  toggleShortcuts: PropTypes.func.isRequired,
+  pickKapturesDir: PropTypes.elementType.isRequired,
+  setOpenOnStartup: PropTypes.elementType.isRequired,
+  updateShortcut: PropTypes.elementType.isRequired,
+  toggleShortcuts: PropTypes.elementType.isRequired,
   category: PropTypes.string,
   cropperShortcut: PropTypes.shape({
     metaKey: PropTypes.bool.isRequired,
@@ -268,6 +273,7 @@ export default connect(
   }),
   ({
     toggleSetting,
+    toggleRecordAudio,
     setAudioInputDeviceId,
     pickKapturesDir,
     setOpenOnStartup,
@@ -275,6 +281,7 @@ export default connect(
     toggleShortcuts
   }) => ({
     toggleSetting,
+    toggleRecordAudio,
     setAudioInputDeviceId,
     pickKapturesDir,
     setOpenOnStartup,
